@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "305799257185",
+    "project_id": "makeyourmeal-757bd",
+    "storage_bucket": "makeyourmeal-757bd.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:305799257185:android:1304c7bd5280bd46465e20",
+        "android_client_info": {
+          "package_name": "com.example.make_your_meal"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAuOkpT-liTnhKtTEj9BMml6c1982n6Ppg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
