@@ -2,8 +2,8 @@ import 'package:cloudinary_public/cloudinary_public.dart';
 import 'dart:io';
 
 class CloudinaryService {
-  static const String _cloudName = 'YOUR_CLOUD_NAME'; // Replace with your Cloudinary cloud name
-  static const String _uploadPreset = 'YOUR_UPLOAD_PRESET'; // Replace with your upload preset
+  static const String _cloudName = 'doolej613'; // Replace with your Cloudinary cloud name
+  static const String _uploadPreset = 'make-your-meal'; // Replace with your upload preset
   
   static final CloudinaryPublic _cloudinary = CloudinaryPublic(
     _cloudName,
