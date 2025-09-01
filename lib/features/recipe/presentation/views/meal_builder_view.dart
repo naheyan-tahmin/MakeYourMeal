@@ -700,7 +700,7 @@ class _SaveMealDialogState extends State<_SaveMealDialog> {
           ),
           const SizedBox(height: 16),
           DropdownButtonFormField<RecipeCategory>(
-            initialValue: _category,
+            value: _category,
             decoration: const InputDecoration(labelText: 'Category'),
             items: RecipeCategory.values.map((category) {
               return DropdownMenuItem(

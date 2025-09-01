@@ -282,7 +282,7 @@ class _AddRecipeViewState extends ConsumerState<AddRecipeView> {
 
             // Category Dropdown
             DropdownButtonFormField<RecipeCategory>(
-              initialValue: _selectedCategory,
+              value: _selectedCategory,
               decoration: const InputDecoration(labelText: 'Category'),
               items: RecipeCategory.values.map((category) {
                 return DropdownMenuItem(

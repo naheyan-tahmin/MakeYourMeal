@@ -187,7 +187,7 @@ class _AddCustomFoodItemViewState extends ConsumerState<AddCustomFoodItemView> {
             const SizedBox(height: 16),
 
             DropdownButtonFormField<String>(
-              initialValue: _selectedCategory,
+              value: _selectedCategory,
               decoration: const InputDecoration(labelText: 'Category'),
               items: categories.map((category) {
                 return DropdownMenuItem(

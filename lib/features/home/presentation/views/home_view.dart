@@ -1,8 +1,16 @@
+// File: lib/features/home/presentation/views/home_view.dart (Updated)
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:make_your_meal/features/auth/presentation/providers/auth_provider.dart';
+import 'package:make_your_meal/features/recipe/presentation/providers/recipe_provider.dart';
+import 'package:make_your_meal/features/meal_plan/presentation/providers/meal_plan_provider.dart';
+import 'package:make_your_meal/features/water_intake/presentation/providers/water_intake_provider.dart';
+import 'package:make_your_meal/features/nutrition/presentation/providers/nutrition_provider.dart';
 import 'package:make_your_meal/features/recipe/presentation/views/recipes_list_view.dart';
 import 'package:make_your_meal/features/meal_plan/presentation/views/meal_plan_view.dart';
+import 'package:make_your_meal/features/water_intake/presentation/views/water_intake_view.dart';
+import 'package:make_your_meal/features/nutrition/presentation/views/nutrition_view.dart';
 
 class HomeView extends ConsumerStatefulWidget {
   const HomeView({super.key});
@@ -52,6 +60,12 @@ class DashboardTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(authStateProvider).value;
+    final recipesState = ref.watch(recipesProvider);
+    final mealPlanState = ref.watch(mealPlanProvider);
+
+    // Calculate user-specific stats
+    final userRecipes = recipesState.recipes.where((recipe) => recipe.authorId == user?.uid).toList();
+    final userMealPlans = mealPlanState.mealPlans.where((plan) => plan.userId == user?.uid).toList();
 
     return Scaffold(
       appBar: AppBar(
@@ -89,13 +103,13 @@ class DashboardTab extends ConsumerWidget {
             ),
             const SizedBox(height: 24),
             
-            // Quick Stats Cards
+            // Updated Stats Cards with real data
             Row(
               children: [
                 Expanded(
                   child: _DashboardCard(
-                    title: 'Recipes',
-                    value: '0',
+                    title: 'My Recipes',
+                    value: userRecipes.length.toString(),
                     icon: Icons.restaurant_menu,
                     color: Colors.orange,
                   ),
@@ -104,13 +118,31 @@ class DashboardTab extends ConsumerWidget {
                 Expanded(
                   child: _DashboardCard(
                     title: 'Meal Plans',
-                    value: '0',
+                    value: userMealPlans.length.toString(),
                     icon: Icons.calendar_month,
                     color: Colors.green,
                   ),
                 ),
               ],
             ),
+            
+            const SizedBox(height: 16),
+            
+            // Water and Nutrition Summary Cards
+            if (user != null) ...[
+              Row(
+                children: [
+                  Expanded(
+                    child: _WaterSummaryCard(userId: user.uid),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: _NutritionSummaryCard(userId: user.uid),
+                  ),
+                ],
+              ),
+            ],
+            
             const SizedBox(height: 24),
             
             // Quick Actions
@@ -120,56 +152,67 @@ class DashboardTab extends ConsumerWidget {
             ),
             const SizedBox(height: 16),
             
-            GridView.count(
-              shrinkWrap: true,
-              crossAxisCount: 2,
-              crossAxisSpacing: 16,
-              mainAxisSpacing: 16,
-              childAspectRatio: 1.2,
-              children: [
-                _ActionCard(
-                  title: 'Add Recipe',
-                  icon: Icons.add_circle,
-                  color: Colors.blue,
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const RecipesListView(),
-                      ),
-                    );
-                  },
-                ),
-                _ActionCard(
-                  title: 'Plan Meals',
-                  icon: Icons.event_note,
-                  color: Colors.purple,
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const MealPlanView(),
-                      ),
-                    );
-                  },
-                ),
-                _ActionCard(
-                  title: 'Water Goal',
-                  icon: Icons.water_drop,
-                  color: Colors.cyan,
-                  onTap: () {
-                    // TODO: Implement water tracking
-                  },
-                ),
-                _ActionCard(
-                  title: 'Nutrition',
-                  icon: Icons.analytics,
-                  color: Colors.green,
-                  onTap: () {
-                    // TODO: Implement nutrition analytics
-                  },
-                ),
-              ],
+            Expanded(
+              child: GridView.count(
+                crossAxisCount: 2,
+                crossAxisSpacing: 16,
+                mainAxisSpacing: 16,
+                childAspectRatio: 1.2,
+                children: [
+                  _ActionCard(
+                    title: 'Add Recipe',
+                    icon: Icons.add_circle,
+                    color: Colors.blue,
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const RecipesListView(),
+                        ),
+                      );
+                    },
+                  ),
+                  _ActionCard(
+                    title: 'Plan Meals',
+                    icon: Icons.event_note,
+                    color: Colors.purple,
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const MealPlanView(),
+                        ),
+                      );
+                    },
+                  ),
+                  _ActionCard(
+                    title: 'Water Goal',
+                    icon: Icons.water_drop,
+                    color: Colors.cyan,
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const WaterIntakeView(),
+                        ),
+                      );
+                    },
+                  ),
+                  _ActionCard(
+                    title: 'Nutrition',
+                    icon: Icons.analytics,
+                    color: Colors.green,
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const NutritionView(),
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ),
             ),
           ],
         ),
@@ -210,6 +253,101 @@ class _DashboardCard extends StatelessWidget {
             Text(
               title,
               style: Theme.of(context).textTheme.bodyMedium,
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _WaterSummaryCard extends ConsumerWidget {
+  final String userId;
+
+  const _WaterSummaryCard({required this.userId});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final todayIntake = ref.watch(todayWaterIntakeProvider(userId));
+    final waterGoal = ref.watch(waterGoalProvider(userId));
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            Icon(Icons.water_drop, size: 32, color: Colors.blue),
+            const SizedBox(height: 8),
+            todayIntake.when(
+              data: (intake) => waterGoal.when(
+                data: (goal) {
+                  final progress = intake != null ? (intake.totalIntake / goal.dailyGoalMl) : 0.0;
+                  return Text(
+                    '${(progress * 100).toInt()}%',
+                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.blue,
+                    ),
+                  );
+                },
+                loading: () => const Text('--'),
+                error: (_, __) => const Text('--'),
+              ),
+              loading: () => const Text('--'),
+              error: (_, __) => const Text('--'),
+            ),
+            const Text(
+              'Water Goal',
+              style: TextStyle(fontSize: 12),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _NutritionSummaryCard extends ConsumerWidget {
+  final String userId;
+
+  const _NutritionSummaryCard({required this.userId});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final todayNutrition = ref.watch(todayNutritionProvider(userId));
+    final nutritionGoal = ref.watch(nutritionGoalProvider(userId));
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            Icon(Icons.analytics, size: 32, color: Colors.green),
+            const SizedBox(height: 8),
+            todayNutrition.when(
+              data: (summary) => nutritionGoal.when(
+                data: (goal) {
+                  final progress = (summary.totalCalories / goal.caloriesGoal).clamp(0.0, 1.0);
+                  return Text(
+                    '${summary.totalCalories.toInt()}',
+                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.green,
+                    ),
+                  );
+                },
+                loading: () => const Text('--'),
+                error: (_, __) => const Text('--'),
+              ),
+              loading: () => const Text('--'),
+              error: (_, __) => const Text('--'),
+            ),
+            const Text(
+              'Calories Today',
+              style: TextStyle(fontSize: 12),
+              textAlign: TextAlign.center,
             ),
           ],
         ),
