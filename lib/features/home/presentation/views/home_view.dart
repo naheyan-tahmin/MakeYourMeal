@@ -5,12 +5,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:make_your_meal/features/auth/presentation/providers/auth_provider.dart';
 import 'package:make_your_meal/features/recipe/presentation/providers/recipe_provider.dart';
 import 'package:make_your_meal/features/meal_plan/presentation/providers/meal_plan_provider.dart';
-import 'package:make_your_meal/features/water_intake/presentation/providers/water_intake_provider.dart';
+import 'package:make_your_meal/features/recipe/presentation/views/my_recipe_view.dart';
 import 'package:make_your_meal/features/nutrition/presentation/providers/nutrition_provider.dart';
 import 'package:make_your_meal/features/recipe/presentation/views/recipes_list_view.dart';
 import 'package:make_your_meal/features/meal_plan/presentation/views/meal_plan_view.dart';
 import 'package:make_your_meal/features/water_intake/presentation/views/water_intake_view.dart';
 import 'package:make_your_meal/features/nutrition/presentation/views/nutrition_view.dart';
+import 'package:make_your_meal/core/widgets/app_logo.dart';
+
 
 class HomeView extends ConsumerStatefulWidget {
   const HomeView({super.key});
@@ -69,7 +71,24 @@ class DashboardTab extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Make Your Meal'),
+        title: const  MakeYourMealLogo(
+    fontSize: 22.0,
+    showIcon: true,
+  ),
+  backgroundColor: Colors.transparent,
+  elevation: 0,
+  flexibleSpace: Container(
+    decoration: BoxDecoration(
+      gradient: LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [
+          Colors.green.shade50,
+          Colors.white,
+           ],
+        ),
+      ),
+    ),
         actions: [
           PopupMenuButton(
             onSelected: (value) {
@@ -99,7 +118,11 @@ class DashboardTab extends ConsumerWidget {
           children: [
             Text(
               'Welcome back, ${user?.displayName ?? user?.email.split('@')[0] ?? 'User'}!',
-              style: Theme.of(context).textTheme.headlineSmall,
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.primary,
+              )
             ),
             const SizedBox(height: 24),
             
@@ -112,6 +135,14 @@ class DashboardTab extends ConsumerWidget {
                     value: userRecipes.length.toString(),
                     icon: Icons.restaurant_menu,
                     color: Colors.orange,
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const MyRecipesView(),
+                        ),
+                      );
+                    },
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -193,7 +224,7 @@ class DashboardTab extends ConsumerWidget {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const WaterIntakeView(),
+                          builder: (context) => const SimpleWaterIntakeView(),
                         ),
                       );
                     },
@@ -226,17 +257,22 @@ class _DashboardCard extends StatelessWidget {
   final String value;
   final IconData icon;
   final Color color;
+  final VoidCallback? onTap;
 
   const _DashboardCard({
     required this.title,
     required this.value,
     required this.icon,
-    required this.color,
+    required this.color, 
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     return Card(
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -258,6 +294,7 @@ class _DashboardCard extends StatelessWidget {
           ],
         ),
       ),
+    )
     );
   }
 }
@@ -269,8 +306,7 @@ class _WaterSummaryCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final todayIntake = ref.watch(todayWaterIntakeProvider(userId));
-    final waterGoal = ref.watch(waterGoalProvider(userId));
+    final waterState = ref.watch(waterIntakeStateProvider);
 
     return Card(
       child: Padding(
@@ -279,24 +315,13 @@ class _WaterSummaryCard extends ConsumerWidget {
           children: [
             Icon(Icons.water_drop, size: 32, color: Colors.blue),
             const SizedBox(height: 8),
-            todayIntake.when(
-              data: (intake) => waterGoal.when(
-                data: (goal) {
-                  final progress = intake != null ? (intake.totalIntake / goal.dailyGoalMl) : 0.0;
-                  return Text(
-                    '${(progress * 100).toInt()}%',
+            Text(
+                    '${(waterState.progressPercentage * 100).toInt()}%',
                     style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                       color: Colors.blue,
                     ),
-                  );
-                },
-                loading: () => const Text('--'),
-                error: (_, __) => const Text('--'),
-              ),
-              loading: () => const Text('--'),
-              error: (_, __) => const Text('--'),
-            ),
+                  ),  
             const Text(
               'Water Goal',
               style: TextStyle(fontSize: 12),

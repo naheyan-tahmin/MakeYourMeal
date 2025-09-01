@@ -1,18 +1,119 @@
-// File: lib/features/water_intake/presentation/views/water_intake_view.dart
+// File: lib/features/water_intake/presentation/views/simple_water_intake_view.dart
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:make_your_meal/features/water_intake/presentation/providers/water_intake_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:make_your_meal/features/auth/presentation/providers/auth_provider.dart';
 
-class WaterIntakeView extends ConsumerStatefulWidget {
-  const WaterIntakeView({super.key});
+// Simple state provider for water intake
+final waterIntakeStateProvider = StateNotifierProvider<SimpleWaterIntakeNotifier, SimpleWaterIntakeState>((ref) {
+  return SimpleWaterIntakeNotifier();
+});
 
-  @override
-  ConsumerState<WaterIntakeView> createState() => _WaterIntakeViewState();
+class SimpleWaterIntakeState {
+  final double todayIntake;
+  final double dailyGoal;
+  final bool isLoading;
+
+  SimpleWaterIntakeState({
+    this.todayIntake = 0,
+    this.dailyGoal = 2000,
+    this.isLoading = false,
+  });
+
+  SimpleWaterIntakeState copyWith({
+    double? todayIntake,
+    double? dailyGoal,
+    bool? isLoading,
+  }) {
+    return SimpleWaterIntakeState(
+      todayIntake: todayIntake ?? this.todayIntake,
+      dailyGoal: dailyGoal ?? this.dailyGoal,
+      isLoading: isLoading ?? this.isLoading,
+    );
+  }
+
+  double get progressPercentage => (todayIntake / dailyGoal).clamp(0.0, 1.0);
+  double get remainingWater => (dailyGoal - todayIntake).clamp(0.0, double.infinity);
+
+  String get motivationalMessage {
+    final percentage = progressPercentage;
+    if (percentage >= 1.0) return "Hydration goal achieved! Keep it up!";
+    if (percentage >= 0.8) return "Almost there! You're doing great!";
+    if (percentage >= 0.5) return "Halfway to your goal. Keep drinking!";
+    if (percentage >= 0.3) return "Good start! Your body will thank you.";
+    return "Stay hydrated, stay healthy!";
+  }
+
+  String get inspirationalQuote {
+    final quotes = [
+      "Water is life, and clean water means health.",
+      "Stay hydrated, stay healthy, stay happy.",
+      "Your body is 60% water. Keep it flowing.",
+      "Hydration is the foundation of good health.",
+      "Every sip counts towards a healthier you.",
+    ];
+    return quotes[DateTime.now().day % quotes.length];
+  }
 }
 
-class _WaterIntakeViewState extends ConsumerState<WaterIntakeView> {
+class SimpleWaterIntakeNotifier extends StateNotifier<SimpleWaterIntakeState> {
+  SimpleWaterIntakeNotifier() : super(SimpleWaterIntakeState());
+
+  Future<void> loadTodayData(String userId) async {
+    state = state.copyWith(isLoading: true);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final today = DateTime.now();
+      final dateKey = '${today.year}-${today.month}-${today.day}';
+      
+      final todayIntake = prefs.getDouble('water_intake_${userId}_$dateKey') ?? 0.0;
+      final dailyGoal = prefs.getDouble('water_goal_$userId') ?? 2000.0;
+      
+      state = state.copyWith(
+        todayIntake: todayIntake,
+        dailyGoal: dailyGoal,
+        isLoading: false,
+      );
+    } catch (e) {
+      state = state.copyWith(isLoading: false);
+    }
+  }
+
+  Future<void> addWaterIntake(String userId, double amountMl) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final today = DateTime.now();
+      final dateKey = '${today.year}-${today.month}-${today.day}';
+      
+      final newIntake = state.todayIntake + amountMl;
+      await prefs.setDouble('water_intake_${userId}_$dateKey', newIntake);
+      
+      state = state.copyWith(todayIntake: newIntake);
+    } catch (e) {
+      // Handle error silently for now
+    }
+  }
+
+  Future<void> setWaterGoal(String userId, double goalMl) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setDouble('water_goal_$userId', goalMl);
+      state = state.copyWith(dailyGoal: goalMl);
+    } catch (e) {
+      // Handle error silently for now
+    }
+  }
+}
+
+class SimpleWaterIntakeView extends ConsumerStatefulWidget {
+  const SimpleWaterIntakeView({super.key});
+
+  @override
+  ConsumerState<SimpleWaterIntakeView> createState() => _SimpleWaterIntakeViewState();
+}
+
+class _SimpleWaterIntakeViewState extends ConsumerState<SimpleWaterIntakeView> {
   final TextEditingController _goalController = TextEditingController();
   bool _showGoalEdit = false;
 
@@ -22,7 +123,7 @@ class _WaterIntakeViewState extends ConsumerState<WaterIntakeView> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final user = ref.read(authStateProvider).value;
       if (user != null) {
-        ref.read(waterIntakeProvider.notifier).loadTodayData(user.uid);
+        ref.read(waterIntakeStateProvider.notifier).loadTodayData(user.uid);
       }
     });
   }
@@ -36,37 +137,44 @@ class _WaterIntakeViewState extends ConsumerState<WaterIntakeView> {
   @override
   Widget build(BuildContext context) {
     final user = ref.watch(authStateProvider).value;
-    final waterState = ref.watch(waterIntakeProvider);
-    final todayIntakeAsync = ref.watch(todayWaterIntakeProvider(user?.uid ?? ''));
-    final waterGoalAsync = ref.watch(waterGoalProvider(user?.uid ?? ''));
+    final waterState = ref.watch(waterIntakeStateProvider);
+
+    if (waterState.isLoading) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('Water Intake'),
+          backgroundColor: Colors.blue.shade50,
+        ),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Water Intake'),
         backgroundColor: Colors.blue.shade50,
         foregroundColor: Colors.blue.shade800,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
       ),
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              Colors.blue.shade50,
-              Colors.white,
-            ],
+            colors: [Colors.blue.shade50, Colors.white],
           ),
         ),
-        child: Padding(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.all(16),
           child: Column(
             children: [
               // Progress Card
               Card(
                 elevation: 4,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 child: Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
@@ -79,7 +187,7 @@ class _WaterIntakeViewState extends ConsumerState<WaterIntakeView> {
                     children: [
                       Row(
                         children: [
-                          Icon(Icons.water_drop, color: Colors.white, size: 32),
+                          const Icon(Icons.water_drop, color: Colors.white, size: 32),
                           const SizedBox(width: 12),
                           Expanded(
                             child: Text(
@@ -93,17 +201,7 @@ class _WaterIntakeViewState extends ConsumerState<WaterIntakeView> {
                         ],
                       ),
                       const SizedBox(height: 16),
-                      
-                      // Progress indicator
-                      todayIntakeAsync.when(
-                        data: (intake) => waterGoalAsync.when(
-                          data: (goal) => _buildProgressIndicator(intake, goal, waterState),
-                          loading: () => const CircularProgressIndicator(color: Colors.white),
-                          error: (_, __) => const Text('Error loading goal', style: TextStyle(color: Colors.white)),
-                        ),
-                        loading: () => const CircularProgressIndicator(color: Colors.white),
-                        error: (_, __) => const Text('Error loading intake', style: TextStyle(color: Colors.white)),
-                      ),
+                      _buildProgressIndicator(waterState),
                     ],
                   ),
                 ),
@@ -114,9 +212,7 @@ class _WaterIntakeViewState extends ConsumerState<WaterIntakeView> {
               // Quick Add Buttons
               Text(
                 'Quick Add Water',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 12),
               
@@ -149,105 +245,80 @@ class _WaterIntakeViewState extends ConsumerState<WaterIntakeView> {
               
               const SizedBox(height: 20),
               
-              // Custom Amount
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    children: [
-                      Text(
-                        'Add Custom Amount',
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                      const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: TextFormField(
-                              keyboardType: TextInputType.number,
-                              decoration: const InputDecoration(
-                                labelText: 'Amount (ml)',
-                                border: OutlineInputBorder(),
-                              ),
-                              onFieldSubmitted: (value) {
-                                final amount = double.tryParse(value);
-                                if (amount != null && amount > 0) {
-                                  _addWater(user?.uid ?? '', amount);
-                                }
-                              },
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          ElevatedButton(
-                            onPressed: () => _showCustomAmountDialog(),
-                            child: const Text('Add'),
-                          ),
-                        ],
-                      ),
-                    ],
+              // Goal Setting
+             Card(
+  child: Padding(
+    padding: const EdgeInsets.all(16),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Text('Daily Goal', style: Theme.of(context).textTheme.titleMedium),
+            const Spacer(),
+            TextButton(
+              onPressed: () {
+                setState(() {
+                  _showGoalEdit = !_showGoalEdit;
+                  if (_showGoalEdit) {
+                    // Pre-populate the controller with current goal
+                    _goalController.text = waterState.dailyGoal.toInt().toString();
+                  }
+                });
+              },
+              child: Text(_showGoalEdit ? 'Cancel' : 'Edit'),
+            ),
+          ],
+        ),
+        if (_showGoalEdit) ...[
+          const SizedBox(height: 12),
+          // Fixed layout - use Column instead of Row for better sizing
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(
+                width: double.infinity, // Give the TextFormField explicit width
+                child: TextFormField(
+                  controller: _goalController,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    labelText: 'Daily Goal (ml)',
+                    border: OutlineInputBorder(),
+                    hintText: 'Enter your daily water goal',
                   ),
                 ),
               ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => _updateGoal(user?.uid ?? ''),
+                  child: const Text('Save Goal'),
+                ),
+              ),
+            ],
+          ),
+        ] else ...[
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Icon(Icons.track_changes, size: 16, color: Colors.blue),
+              const SizedBox(width: 8),
+              Text(
+                '${waterState.dailyGoal.toInt()}ml per day',
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ],
+    ),
+  ),
+), 
               
               const SizedBox(height: 20),
-              
-              // Goal Setting
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Text(
-                            'Daily Goal',
-                            style: Theme.of(context).textTheme.titleMedium,
-                          ),
-                          const Spacer(),
-                          TextButton(
-                            onPressed: () => setState(() => _showGoalEdit = !_showGoalEdit),
-                            child: Text(_showGoalEdit ? 'Cancel' : 'Edit'),
-                          ),
-                        ],
-                      ),
-                      if (_showGoalEdit) ...[
-                        const SizedBox(height: 12),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: TextFormField(
-                                controller: _goalController,
-                                keyboardType: TextInputType.number,
-                                decoration: const InputDecoration(
-                                  labelText: 'Daily Goal (ml)',
-                                  border: OutlineInputBorder(),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            ElevatedButton(
-                              onPressed: () => _updateGoal(user?.uid ?? ''),
-                              child: const Text('Save'),
-                            ),
-                          ],
-                        ),
-                      ] else ...[
-                        waterGoalAsync.when(
-                          data: (goal) => Text(
-                            '${goal.dailyGoalMl.toInt()}ml per day',
-                            style: Theme.of(context).textTheme.bodyLarge,
-                          ),
-                          loading: () => const Text('Loading...'),
-                          error: (_, __) => const Text('Error loading goal'),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              ),
-              
-              const Spacer(),
               
               // Motivational Quote
               Container(
@@ -279,13 +350,7 @@ class _WaterIntakeViewState extends ConsumerState<WaterIntakeView> {
     );
   }
 
-  Widget _buildProgressIndicator(intake, goal,WaterIntakeState waterState) {
-    final progress = intake != null && goal != null ? 
-        (intake.totalIntake / goal.dailyGoalMl).clamp(0.0, 1.0) : 0.0;
-    final consumed = intake?.totalIntake ?? 0.0;
-    final target = goal?.dailyGoalMl ?? 2000.0;
-    final remaining = (target - consumed).clamp(0.0, double.infinity);
-
+  Widget _buildProgressIndicator(SimpleWaterIntakeState state) {
     return Column(
       children: [
         Stack(
@@ -295,7 +360,7 @@ class _WaterIntakeViewState extends ConsumerState<WaterIntakeView> {
               width: 120,
               height: 120,
               child: CircularProgressIndicator(
-                value: progress,
+                value: state.progressPercentage,
                 strokeWidth: 8,
                 backgroundColor: Colors.white24,
                 valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
@@ -304,51 +369,28 @@ class _WaterIntakeViewState extends ConsumerState<WaterIntakeView> {
             Column(
               children: [
                 Text(
-                  '${consumed.toInt()}ml',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  '${state.todayIntake.toInt()}ml',
+                  style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
                 ),
                 Text(
-                  '/ ${target.toInt()}ml',
-                  style: const TextStyle(
-                    color: Colors.white70,
-                    fontSize: 14,
-                  ),
+                  '/ ${state.dailyGoal.toInt()}ml',
+                  style: const TextStyle(color: Colors.white70, fontSize: 14),
                 ),
               ],
             ),
           ],
         ),
         const SizedBox(height: 16),
-        if (remaining > 0) ...[
-          Text(
-            '${(remaining / 1000).toStringAsFixed(1)}L more to go!',
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ] else ...[
-          const Text(
-            'Goal achieved! 🎉',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
+        Text(
+          state.remainingWater > 0 
+            ? '${(state.remainingWater / 1000).toStringAsFixed(1)}L more to go!'
+            : 'Goal achieved! 🎉',
+          style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w500),
+        ),
         const SizedBox(height: 8),
         Text(
-          waterState.motivationalMessage,
-          style: const TextStyle(
-            color: Colors.white70,
-            fontSize: 14,
-          ),
+          state.motivationalMessage,
+          style: const TextStyle(color: Colors.white70, fontSize: 14),
           textAlign: TextAlign.center,
         ),
       ],
@@ -356,57 +398,29 @@ class _WaterIntakeViewState extends ConsumerState<WaterIntakeView> {
   }
 
   void _addWater(String userId, double amount) {
-    ref.read(waterIntakeProvider.notifier).addWaterIntake(userId, amount);
-    ref.invalidate(todayWaterIntakeProvider(userId));
+    ref.read(waterIntakeStateProvider.notifier).addWaterIntake(userId, amount);
   }
-
   void _updateGoal(String userId) {
-    final amount = double.tryParse(_goalController.text);
-    if (amount != null && amount > 0) {
-      ref.read(waterIntakeProvider.notifier).setWaterGoal(userId, amount);
-      ref.invalidate(waterGoalProvider(userId));
-      setState(() => _showGoalEdit = false);
-      _goalController.clear();
-    }
+  final text = _goalController.text.trim();
+  if (text.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Please enter a valid goal amount')),
+    );
+    return;
   }
-
-  void _showCustomAmountDialog() {
-    final customController = TextEditingController();
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Add Water'),
-        content: TextFormField(
-          controller: customController,
-          keyboardType: TextInputType.number,
-          decoration: const InputDecoration(
-            labelText: 'Amount (ml)',
-            border: OutlineInputBorder(),
-          ),
-          autofocus: true,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              final amount = double.tryParse(customController.text);
-              if (amount != null && amount > 0) {
-                final user = ref.read(authStateProvider).value;
-                _addWater(user?.uid ?? '', amount);
-                Navigator.pop(context);
-              }
-            },
-            child: const Text('Add'),
-          ),
-        ],
-      ),
+  
+  final amount = double.tryParse(text);
+  if (amount != null && amount > 0) {
+    ref.read(waterIntakeStateProvider.notifier).setWaterGoal(userId, amount);
+    setState(() => _showGoalEdit = false);
+    _goalController.clear();
+  } else {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Please enter a valid number greater than 0')),
     );
   }
 }
-
+}
 class _QuickAddButton extends StatelessWidget {
   final double amount;
   final String label;
@@ -427,8 +441,8 @@ class _QuickAddButton extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 90,
-        height: 90,
+        width: 80,
+        height: 80,
         decoration: BoxDecoration(
           color: color.withOpacity(0.1),
           borderRadius: BorderRadius.circular(12),
@@ -437,15 +451,11 @@ class _QuickAddButton extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: color, size: 28),
+            Icon(icon, color: color, size: 24),
             const SizedBox(height: 4),
             Text(
               label,
-              style: TextStyle(
-                color: color,
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-              ),
+              style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.w500),
               textAlign: TextAlign.center,
             ),
           ],
