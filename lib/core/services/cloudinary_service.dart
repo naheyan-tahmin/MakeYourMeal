@@ -61,4 +61,20 @@ class CloudinaryService {
     
     return imageUrl;
   }
+    // Upload food item image
+  static Future<String> uploadFoodItemImage(File imageFile, String foodItemId) async {
+    try {
+      final response = await _cloudinary.uploadFile(
+        CloudinaryFile.fromFile(
+          imageFile.path,
+          folder: 'make_your_meal/food_items',
+          publicId: 'food_item_$foodItemId',
+          resourceType: CloudinaryResourceType.Image,
+        ),
+      );
+      return response.secureUrl;
+    } catch (e) {
+      throw 'Failed to upload food item image: $e';
+    }
+  }
 }

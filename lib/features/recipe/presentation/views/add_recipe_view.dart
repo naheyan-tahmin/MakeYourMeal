@@ -172,7 +172,7 @@ class _AddRecipeViewState extends ConsumerState<AddRecipeView> {
       imageUrl: _isEditing ? widget.recipe!.imageUrl : null,
       nutrition: nutrition,
       authorId: user.uid,
-      authorName: user.displayName ?? user.email!.split('@')[0],
+      authorName: user.displayName ?? user.email.split('@')[0],
       createdAt: _isEditing ? widget.recipe!.createdAt : DateTime.now(),
       updatedAt: DateTime.now(),
     );
@@ -282,7 +282,7 @@ class _AddRecipeViewState extends ConsumerState<AddRecipeView> {
 
             // Category Dropdown
             DropdownButtonFormField<RecipeCategory>(
-              value: _selectedCategory,
+              initialValue: _selectedCategory,
               decoration: const InputDecoration(labelText: 'Category'),
               items: RecipeCategory.values.map((category) {
                 return DropdownMenuItem(

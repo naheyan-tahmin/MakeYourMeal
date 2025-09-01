@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:make_your_meal/features/recipe/presentation/providers/recipe_provider.dart';
 import 'package:make_your_meal/features/recipe/presentation/views/add_recipe_view.dart';
+import 'package:make_your_meal/features/recipe/presentation/views/meal_builder_view.dart';
 import 'package:make_your_meal/features/recipe/presentation/views/recipe_detail_view.dart';
 import 'package:make_your_meal/features/recipe/domain/models/recipe_category.dart';
 import 'package:make_your_meal/core/services/cloudinary_service.dart';
@@ -21,16 +22,58 @@ class RecipesListView extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Recipes'),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.add),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const AddRecipeView(),
-                ),
-              );
+          PopupMenuButton<String>(
+            onSelected: (value) {
+              if (value == 'add_traditional') {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const AddRecipeView(),
+                  ),
+                );
+              } else if (value == 'build_meal') {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const MealBuilderView(),
+                  ),
+                );
+              }
             },
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'build_meal',
+                child: Row(
+                  children: [
+                    Icon(Icons.build_circle),
+                    SizedBox(width: 8),
+                    Text('Build Meal'),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'add_traditional',
+                child: Row(
+                  children: [
+                    Icon(Icons.edit_note),
+                    SizedBox(width: 8),
+                    Text('Add Traditional Recipe'),
+                  ],
+                ),
+              ),
+            ],
+            child: Container(
+              margin: const EdgeInsets.only(right: 8),
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.primary,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(
+                Icons.add,
+                color: Colors.white,
+              ),
+            ),
           ),
         ],
       ),
@@ -49,6 +92,50 @@ class RecipesListView extends ConsumerWidget {
               ),
             ),
           ),
+
+          // Quick Action Cards
+          Container(
+            height: 100,
+            margin: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              children: [
+                Expanded(
+                  child: _QuickActionCard(
+                    title: 'Build Meal',
+                    subtitle: 'Select ingredients',
+                    icon: Icons.build_circle,
+                    color: Colors.green,
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const MealBuilderView(),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: _QuickActionCard(
+                    title: 'Add Recipe',
+                    subtitle: 'Write manually',
+                    icon: Icons.edit_note,
+                    color: Colors.blue,
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const AddRecipeView(),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
 
           // Category Filter
           SizedBox(
@@ -105,10 +192,24 @@ class RecipesListView extends ConsumerWidget {
                             Text(
                               searchQuery.isNotEmpty 
                                   ? 'No recipes found for "$searchQuery"'
-                                  : 'No recipes yet. Add your first recipe!',
+                                  : 'No recipes yet. Build your first meal!',
                               style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                                 color: Colors.grey[600],
                               ),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 16),
+                            ElevatedButton.icon(
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => const MealBuilderView(),
+                                  ),
+                                );
+                              },
+                              icon: const Icon(Icons.build_circle),
+                              label: const Text('Build Your First Meal'),
                             ),
                           ],
                         ),
@@ -123,6 +224,68 @@ class RecipesListView extends ConsumerWidget {
                       ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _QuickActionCard extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final IconData icon;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _QuickActionCard({
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(icon, color: color, size: 24),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      title,
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      subtitle,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

@@ -84,7 +84,7 @@ class DashboardTab extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Welcome back, ${user?.displayName ?? user?.email?.split('@')[0] ?? 'User'}!',
+              'Welcome back, ${user?.displayName ?? user?.email.split('@')[0] ?? 'User'}!',
               style: Theme.of(context).textTheme.headlineSmall,
             ),
             const SizedBox(height: 24),
