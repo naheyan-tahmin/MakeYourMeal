@@ -1,4 +1,4 @@
-// File: lib/features/water_intake/presentation/views/simple_water_intake_view.dart
+
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

@@ -1,4 +1,4 @@
-// File: lib/features/recipe/presentation/providers/meal_builder_provider.dart
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:make_your_meal/features/recipe/domain/models/food_item_model.dart';
 import 'package:make_your_meal/core/services/food_items_service.dart';

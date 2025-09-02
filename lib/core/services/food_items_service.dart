@@ -1,4 +1,3 @@
-// File: lib/core/services/food_items_service.dart
 import 'dart:convert';
 import 'dart:io';
 import 'package:shared_preferences/shared_preferences.dart';

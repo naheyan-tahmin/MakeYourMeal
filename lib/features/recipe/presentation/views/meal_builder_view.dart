@@ -1,4 +1,4 @@
-// File: lib/features/recipe/presentation/views/meal_builder_view.dart
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';

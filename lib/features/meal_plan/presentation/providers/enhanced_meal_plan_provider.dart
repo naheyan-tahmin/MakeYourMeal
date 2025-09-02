@@ -1,5 +1,4 @@
-// File: lib/features/meal_plan/presentation/providers/enhanced_meal_plan_provider.dart
-// This is an enhancement to your existing meal_plan_provider.dart
+
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:make_your_meal/features/meal_plan/domain/models/meal_plan_model.dart';

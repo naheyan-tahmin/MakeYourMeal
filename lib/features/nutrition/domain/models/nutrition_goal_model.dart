@@ -1,4 +1,4 @@
-// File: lib/features/nutrition/domain/models/nutrition_goal_model.dart
+
 
 class NutritionGoalModel {
   final String userId;

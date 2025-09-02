@@ -1,4 +1,4 @@
-// File: lib/features/recipe/domain/models/food_item_model.dart
+
 class FoodItemModel {
   final String id;
   final String name;

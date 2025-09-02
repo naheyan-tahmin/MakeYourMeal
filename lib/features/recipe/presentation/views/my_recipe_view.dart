@@ -1,4 +1,4 @@
-// File: lib/features/recipe/presentation/views/my_recipes_view.dart
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:make_your_meal/features/recipe/domain/models/recipe_model.dart';
@@ -18,7 +18,7 @@ class MyRecipesView extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(authStateProvider).value;
     final userId = user?.uid;
-    
+
     final userRecipes = ref.watch(filteredUserRecipesProvider(userId));
     final searchQuery = ref.watch(recipeSearchProvider);
     final selectedCategory = ref.watch(recipeCategoryFilterProvider);
@@ -100,48 +100,44 @@ class MyRecipesView extends ConsumerWidget {
           ),
 
           // Quick Action Cards (only show if user has no recipes)
-          if (userRecipes.isEmpty && searchQuery.isEmpty)
-            Container(
-              height: 100,
-              margin: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: _QuickActionCard(
-                      title: 'Build Meal',
-                      subtitle: 'Create your first recipe',
-                      icon: Icons.build_circle,
-                      color: Colors.green,
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const MealBuilderView(),
-                          ),
-                        );
-                      },
+         if (userRecipes.isEmpty && searchQuery.isEmpty)
+            Padding(
+               padding: const EdgeInsets.symmetric(horizontal: 16),
+             child: Column(
+             children: [
+             _QuickActionCard(
+                title: 'Build Meal',
+                subtitle: 'Create your first recipe',
+                icon: Icons.build_circle,
+                color: Colors.green,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const MealBuilderView(),
                     ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: _QuickActionCard(
-                      title: 'Add Recipe',
-                      subtitle: 'Write manually',
-                      icon: Icons.edit_note,
-                      color: Colors.blue,
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const AddRecipeView(),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ],
+                );
+              },
+           ),
+        const SizedBox(height: 16),
+        _QuickActionCard(
+          title: 'Add Recipe',
+          subtitle: 'Write manually',
+          icon: Icons.edit_note,
+          color: Colors.blue,
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const AddRecipeView(),
               ),
-            ),
+            );
+          },
+        ),
+      ],
+    ),
+  ),
+
 
           // Category Filter (only show if user has recipes)
           if (userRecipes.isNotEmpty || searchQuery.isNotEmpty)
@@ -159,12 +155,13 @@ class MyRecipesView extends ConsumerWidget {
                         label: const Text('All'),
                         selected: selectedCategory == null,
                         onSelected: (selected) {
-                          ref.read(recipeCategoryFilterProvider.notifier).state = null;
+                          ref.read(recipeCategoryFilterProvider.notifier).state =
+                              null;
                         },
                       ),
                     );
                   }
-                  
+
                   final category = RecipeCategory.values[index - 1];
                   return Padding(
                     padding: const EdgeInsets.only(right: 8),
@@ -172,8 +169,9 @@ class MyRecipesView extends ConsumerWidget {
                       label: Text(category.displayName),
                       selected: selectedCategory == category.name,
                       onSelected: (selected) {
-                        ref.read(recipeCategoryFilterProvider.notifier).state = 
-                            selected ? category.name : null;
+                        ref
+                            .read(recipeCategoryFilterProvider.notifier)
+                            .state = selected ? category.name : null;
                       },
                     ),
                   );
@@ -184,21 +182,23 @@ class MyRecipesView extends ConsumerWidget {
           // Recipe Count Header
           if (userRecipes.isNotEmpty || searchQuery.isNotEmpty)
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Row(
                 children: [
                   Text(
                     '${userRecipes.length} recipe${userRecipes.length == 1 ? '' : 's'}',
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w500,
-                    ),
+                          fontWeight: FontWeight.w500,
+                        ),
                   ),
                   if (searchQuery.isNotEmpty || selectedCategory != null) ...[
                     const SizedBox(width: 8),
                     TextButton(
                       onPressed: () {
                         ref.read(recipeSearchProvider.notifier).state = '';
-                        ref.read(recipeCategoryFilterProvider.notifier).state = null;
+                        ref.read(recipeCategoryFilterProvider.notifier).state =
+                            null;
                       },
                       child: const Text('Clear filters'),
                     ),
@@ -212,7 +212,8 @@ class MyRecipesView extends ConsumerWidget {
             child: recipeState.isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : userRecipes.isEmpty
-                    ? _buildEmptyState(context, searchQuery, selectedCategory)
+                    ? _buildEmptyState(
+                        context, searchQuery, selectedCategory)
                     : ListView.builder(
                         padding: const EdgeInsets.all(16),
                         itemCount: userRecipes.length,
@@ -227,7 +228,8 @@ class MyRecipesView extends ConsumerWidget {
     );
   }
 
-  Widget _buildEmptyState(BuildContext context, String searchQuery, String? selectedCategory) {
+  Widget _buildEmptyState(
+      BuildContext context, String searchQuery, String? selectedCategory) {
     if (searchQuery.isNotEmpty || selectedCategory != null) {
       return Center(
         child: Column(
@@ -242,17 +244,17 @@ class MyRecipesView extends ConsumerWidget {
             Text(
               'No recipes found',
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                color: Colors.grey[600],
-              ),
+                    color: Colors.grey[600],
+                  ),
             ),
             const SizedBox(height: 8),
             Text(
-              searchQuery.isNotEmpty 
+              searchQuery.isNotEmpty
                   ? 'Try a different search term'
                   : 'Try selecting a different category',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Colors.grey[600],
-              ),
+                    color: Colors.grey[600],
+                  ),
               textAlign: TextAlign.center,
             ),
           ],
@@ -261,28 +263,16 @@ class MyRecipesView extends ConsumerWidget {
     }
 
     return Center(
-      child: Column(
+      child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Icon(
-            Icons.restaurant_menu,
-            size: 80,
-            color: Colors.grey[400],
-          ),
-          const SizedBox(height: 24),
-          Text(
-            'No recipes yet',
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-              color: Colors.grey[600],
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 8),
+         
           Text(
             'Start building your personal recipe collection',
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-              color: Colors.grey[600],
-            ),
+                  color: Colors.grey[600],
+                ),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 32),
@@ -340,41 +330,42 @@ class _QuickActionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
         child: Padding(
           padding: const EdgeInsets.all(16),
-          child: Row(
+          child: Column(
+            mainAxisSize: MainAxisSize.min, // ✅ prevents overflow
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center, // ✅ center horizontally
             children: [
               Container(
-                padding: const EdgeInsets.all(8),
+                padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   color: color.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(icon, color: color, size: 24),
+                child: Icon(icon, color: color, size: 28),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      title,
-                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+              const SizedBox(height: 12),
+              Text(
+                title,
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
                     ),
-                    Text(
-                      subtitle,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Colors.grey[600],
-                      ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                subtitle,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Colors.grey[600],
                     ),
-                  ],
-                ),
+                textAlign: TextAlign.center,
               ),
             ],
           ),
@@ -409,7 +400,8 @@ class _RecipeCard extends StatelessWidget {
             // Recipe Image
             if (recipe.imageUrl != null)
               ClipRRect(
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+                borderRadius:
+                    const BorderRadius.vertical(top: Radius.circular(12)),
                 child: Image.network(
                   CloudinaryService.getOptimizedImageUrl(
                     recipe.imageUrl!,
@@ -423,7 +415,8 @@ class _RecipeCard extends StatelessWidget {
                     return Container(
                       height: 150,
                       color: Colors.grey[300],
-                      child: const Icon(Icons.image_not_supported, size: 50),
+                      child:
+                          const Icon(Icons.image_not_supported, size: 50),
                     );
                   },
                 ),
@@ -439,15 +432,21 @@ class _RecipeCard extends StatelessWidget {
                       Expanded(
                         child: Text(
                           recipe.title,
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
+                          style: Theme.of(context)
+                              .textTheme
+                              .titleMedium
+                              ?.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
                         ),
                       ),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.primaryContainer,
+                          color: Theme.of(context)
+                              .colorScheme
+                              .primaryContainer,
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
@@ -467,14 +466,16 @@ class _RecipeCard extends StatelessWidget {
                   const SizedBox(height: 8),
                   Row(
                     children: [
-                      Icon(Icons.schedule, size: 16, color: Colors.grey[600]),
+                      Icon(Icons.schedule,
+                          size: 16, color: Colors.grey[600]),
                       const SizedBox(width: 4),
                       Text(
                         '${recipe.prepTimeMinutes + recipe.cookTimeMinutes} min',
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
                       const SizedBox(width: 16),
-                      Icon(Icons.people, size: 16, color: Colors.grey[600]),
+                      Icon(Icons.people,
+                          size: 16, color: Colors.grey[600]),
                       const SizedBox(width: 4),
                       Text(
                         '${recipe.servings} servings',
@@ -482,7 +483,8 @@ class _RecipeCard extends StatelessWidget {
                       ),
                       if (recipe.nutrition != null) ...[
                         const SizedBox(width: 16),
-                        Icon(Icons.local_fire_department, size: 16, color: Colors.grey[600]),
+                        Icon(Icons.local_fire_department,
+                            size: 16, color: Colors.grey[600]),
                         const SizedBox(width: 4),
                         Text(
                           '${recipe.nutrition!.calories.toInt()} cal',
