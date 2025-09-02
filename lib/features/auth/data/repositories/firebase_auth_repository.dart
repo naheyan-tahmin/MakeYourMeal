@@ -48,10 +48,8 @@
 
 //       final userModel = _mapFirebaseUserToUserModel(user);
       
-//       // FIXED: Sign out the user after successful registration
-//       // This forces them to manually log in with their new credentials
-//       await _auth.signOut();
-      
+//       // FIXED: Don't sign out after signup - let the user stay signed in
+//       // This prevents the authentication state confusion
 //       return userModel;
 //     } on FirebaseAuthException catch (e) {
 //       throw _mapFirebaseException(e);
@@ -97,6 +95,7 @@
 
 
 // File: lib/features/auth/data/repositories/firebase_auth_repository.dart (Fixed)
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:make_your_meal/features/auth/domain/models/user_model.dart';
 import 'package:make_your_meal/features/auth/domain/repositories/auth_repository.dart';
@@ -118,6 +117,10 @@ class FirebaseAuthRepository implements AuthRepository {
         email: email,
         password: password,
       );
+      
+      // FIXED: Add delay to ensure auth state propagates properly
+      await Future.delayed(const Duration(milliseconds: 300));
+      
       return _mapFirebaseUserToUserModel(credential.user!);
     } on FirebaseAuthException catch (e) {
       throw _mapFirebaseException(e);
@@ -135,18 +138,26 @@ class FirebaseAuthRepository implements AuthRepository {
         email: email,
         password: password,
       );
-
+      
       final user = credential.user!;
       
       if (displayName != null && displayName.isNotEmpty) {
         await user.updateDisplayName(displayName);
+        // FIXED: Reload the user to get updated info
         await user.reload();
       }
 
       final userModel = _mapFirebaseUserToUserModel(user);
       
-      // FIXED: Don't sign out after signup - let the user stay signed in
-      // This prevents the authentication state confusion
+      // FIXED: Add a delay before signing out to ensure user creation is complete
+      await Future.delayed(const Duration(milliseconds: 500));
+      
+      // Sign out the user after successful registration
+      await _auth.signOut();
+      
+      // FIXED: Add another delay to ensure sign out is complete
+      await Future.delayed(const Duration(milliseconds: 300));
+      
       return userModel;
     } on FirebaseAuthException catch (e) {
       throw _mapFirebaseException(e);
@@ -156,6 +167,8 @@ class FirebaseAuthRepository implements AuthRepository {
   @override
   Future<void> signOut() async {
     await _auth.signOut();
+    // FIXED: Add delay to ensure sign out is complete
+    await Future.delayed(const Duration(milliseconds: 200));
   }
 
   UserModel _mapFirebaseUserToUserModel(User user) {
@@ -184,6 +197,10 @@ class FirebaseAuthRepository implements AuthRepository {
         return 'This user account has been disabled';
       case 'too-many-requests':
         return 'Too many requests. Please try again later';
+      case 'network-request-failed':
+        return 'Network error. Please check your connection';
+      case 'invalid-credential':
+        return 'Invalid email or password';
       default:
         return e.message ?? 'An unknown error occurred';
     }
