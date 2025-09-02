@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:firebase_auth/firebase_auth.dart'; // ✅ Added for logout fix
-import 'package:make_your_meal/features/auth/presentation/views/login_view.dart'; // ✅ Added for logout fix
+import 'package:firebase_auth/firebase_auth.dart'; 
+import 'package:make_your_meal/features/auth/presentation/views/login_view.dart'; 
 import 'package:make_your_meal/features/auth/presentation/providers/auth_provider.dart';
 import 'package:make_your_meal/features/recipe/presentation/providers/recipe_provider.dart';
 import 'package:make_your_meal/features/meal_plan/presentation/providers/meal_plan_provider.dart';
@@ -278,7 +278,7 @@ class DashboardTab extends ConsumerWidget {
     );
   }
 
-  // ✅ Added: proper logout handling with forced navigation
+
   Future<void> _handleLogout(BuildContext context, WidgetRef ref) async {
     try {
       await FirebaseAuth.instance.signOut();
@@ -304,9 +304,7 @@ class DashboardTab extends ConsumerWidget {
   }
 }
 
-// -------------------------
-// Cards (unchanged from Version-1)
-// -------------------------
+
 
 class _DashboardCard extends StatelessWidget {
   final String title;
